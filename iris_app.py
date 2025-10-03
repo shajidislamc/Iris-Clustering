@@ -28,7 +28,7 @@ st.set_page_config(page_title="Iris Flower Clustering", layout="centered")
 st.title("🌸 Iris Flower Clustering App")
 st.write("Choose a clustering method and explore results interactively!")
 
-# --- User Inputs for Prediction ---
+# --- User Inputs ---
 sepal_length = st.number_input("Sepal Length (cm)", min_value=0.0, step=0.1)
 sepal_width = st.number_input("Sepal Width (cm)", min_value=0.0, step=0.1)
 petal_length = st.number_input("Petal Length (cm)", min_value=0.0, step=0.1)
@@ -39,28 +39,29 @@ method = st.selectbox("Select Clustering Method", ["KMeans", "Hierarchical", "DB
 
 # --- Run Clustering ---
 if st.button("🔍 Run Clustering"):
+    
+    input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
+    
     if method == "KMeans":
         model = KMeans(n_clusters=3, random_state=42, n_init="auto")
         cluster_labels = model.fit_predict(X_scaled)
         df["cluster"] = cluster_labels
-        input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
         cluster = model.predict(scaler.transform(input_data))[0]
-
+        st.success(f"🌼 This flower belongs to **Cluster {cluster}** (using {method})")
+    
     elif method == "Hierarchical":
         model = AgglomerativeClustering(n_clusters=3, metric="euclidean", linkage="ward")
         cluster_labels = model.fit_predict(X_scaled)
         df["cluster"] = cluster_labels
-        input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
-        cluster = model.fit_predict(scaler.transform(input_data))[0]
-
+        cluster = None  # Cannot assign cluster to a single new sample
+        st.info("🌼 Cannot assign cluster to a single flower in Hierarchical Clustering. See plots instead.")
+    
     elif method == "DBSCAN":
         model = DBSCAN(eps=1.0, min_samples=5)
         cluster_labels = model.fit_predict(X_scaled)
         df["cluster"] = cluster_labels
-        input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
-        cluster = model.fit_predict(scaler.transform(input_data))[0]
-
-    st.success(f"🌼 This flower belongs to **Cluster {cluster}** (using {method})")
+        cluster = None  # DBSCAN does not have predict for new points
+        st.info("🌼 DBSCAN cannot predict a single new sample. See plots instead.")
 
     # --- Show ARI Scores ---
     st.subheader("📈 Clustering Performance (Adjusted Rand Index)")
@@ -72,7 +73,6 @@ if st.button("🔍 Run Clustering"):
         "Method": ["KMeans", "Hierarchical", "DBSCAN"],
         "ARI Score": [ari_kmeans, ari_hier, ari_dbscan]
     })
-
     st.table(ari_df)
 
     fig_ari, ax = plt.subplots()
@@ -118,13 +118,12 @@ if st.button("🔍 Run Clustering"):
         st.plotly_chart(fig3d, use_container_width=True)
 
     # Dendrogram (only for Hierarchical)
-    if method == "Hierarchical":
-        with tab3:
+    with tab3:
+        if method == "Hierarchical":
             st.subheader("Hierarchical Clustering Dendrogram")
             linked = linkage(X_scaled, method="ward")
             fig, ax = plt.subplots(figsize=(10, 5))
             dendrogram(linked, truncate_mode="level", p=5, ax=ax)
             st.pyplot(fig)
-    else:
-        with tab3:
-            st.info("Dendrogram is only available for Hierarchical Clustering.")
+        else:
+            st.info("🌳 Dendrogram is only available for Hierarchical Clustering.")
