@@ -10,34 +10,26 @@ from sklearn.cluster import KMeans, AgglomerativeClustering, DBSCAN
 from sklearn.metrics import adjusted_rand_score
 from scipy.cluster.hierarchy import linkage, dendrogram
 
-# ------------------------------
-# Load Iris dataset
-# ------------------------------
+
 iris = load_iris()
 df = pd.DataFrame(iris.data, columns=iris.feature_names)
 y_true = iris.target
 
-# Scale the dataset
 scaler = StandardScaler()
 X_scaled = scaler.fit_transform(df)
 
-# ------------------------------
-# Streamlit UI
-# ------------------------------
+
 st.set_page_config(page_title="Iris Flower Clustering", layout="centered")
 st.title("🌸 Iris Flower Clustering App")
 st.write("Choose a clustering method and explore results interactively!")
 
-# --- User Inputs for Single Flower ---
 sepal_length = st.number_input("Sepal Length (cm)", min_value=0.0, step=0.1)
 sepal_width = st.number_input("Sepal Width (cm)", min_value=0.0, step=0.1)
 petal_length = st.number_input("Petal Length (cm)", min_value=0.0, step=0.1)
 petal_width = st.number_input("Petal Width (cm)", min_value=0.0, step=0.1)
 
-# --- Dropdown for Clustering Method ---
 method = st.selectbox("Select Clustering Method", ["KMeans", "Hierarchical", "DBSCAN"])
 
-# --- Run Clustering ---
 if st.button("🔍 Run Clustering"):
     input_data = np.array([[sepal_length, sepal_width, petal_length, petal_width]])
     
@@ -48,7 +40,7 @@ if st.button("🔍 Run Clustering"):
         cluster = model.predict(scaler.transform(input_data))[0]
         st.success(f"🌼 This flower belongs to **Cluster {cluster}** (using {method})")
     else:
-        # For DBSCAN & Hierarchical, we cannot assign single sample
+
         if method == "DBSCAN":
             model = DBSCAN(eps=1.0, min_samples=5)
             cluster_labels = model.fit_predict(X_scaled)
@@ -60,7 +52,6 @@ if st.button("🔍 Run Clustering"):
             df["cluster"] = cluster_labels
             st.info("🌼 Cannot assign cluster to a single flower in Hierarchical Clustering. See plots below.")
 
-    # --- Show ARI Scores ---
     st.subheader("📈 Clustering Performance (Adjusted Rand Index)")
     ari_kmeans = adjusted_rand_score(y_true, KMeans(n_clusters=3, random_state=42, n_init="auto").fit_predict(X_scaled))
     ari_hier = adjusted_rand_score(y_true, AgglomerativeClustering(n_clusters=3).fit_predict(X_scaled))
@@ -73,10 +64,8 @@ if st.button("🔍 Run Clustering"):
 
     st.table(ari_df)
 
-    # --- Tabs for Visualization ---
     tab1, tab2, tab3 = st.tabs(["📊 2D Scatter", "🌐 3D Scatter", "🌳 Dendrogram"])
 
-    # 2D Scatter
     with tab1:
         st.subheader("2D Scatter Plot (Petal length vs Petal width)")
         fig, ax = plt.subplots()
@@ -88,7 +77,6 @@ if st.button("🔍 Run Clustering"):
         ax.legend()
         st.pyplot(fig)
 
-    # 3D Scatter
     with tab2:
         st.subheader("3D Cluster Visualization")
         fig3d = px.scatter_3d(
@@ -110,7 +98,6 @@ if st.button("🔍 Run Clustering"):
         )
         st.plotly_chart(fig3d, use_container_width=True)
 
-    # Dendrogram (only for Hierarchical)
     with tab3:
         if method == "Hierarchical":
             st.subheader("Hierarchical Clustering Dendrogram")
